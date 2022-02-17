@@ -17,6 +17,9 @@ or Steam. Menus are supported via rofi.
 -   In host.py, adapt `render()` to use your icons and colors
 -   In menu.py, adapt `DMENU_CMD` to your preferred dmenu-like tool
 
+Apart from that, feel free to change whatever you like. This repo is meant as
+an example, not a turn-key solution.
+
 ## Module
 
 ```ini
