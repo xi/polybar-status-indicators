@@ -25,7 +25,7 @@ an example, not a turn-key solution.
 ```ini
 [module/indicators]
 type = custom/script
-exec = python3 -u ~/polybar-status-indicators/host.py
+exec = python3 ~/polybar-status-indicators/host.py
 tail = true
 ```
 

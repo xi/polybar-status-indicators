@@ -51,7 +51,7 @@ def render():
 
         labels.append(label)
 
-    print(' '.join(labels))
+    print(' '.join(labels), flush=True)
 
 
 def get_item_data(conn, sender, path):
