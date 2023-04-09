@@ -23,7 +23,7 @@ an example, not a turn-key solution.
 ## Module
 
 ```
-(deflisten tray "./scripts/host.py | jq 'to_entries | map_values(.value)' -c --unbuffered")
+(deflisten tray "./scripts/host.py")
 ```
 
 [0]: https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
