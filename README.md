@@ -22,11 +22,8 @@ an example, not a turn-key solution.
 
 ## Module
 
-```ini
-[module/indicators]
-type = custom/script
-exec = python3 ~/polybar-status-indicators/host.py 2> /dev/null
-tail = true
+```
+(deflisten tray         "./scripts/host.py | jq 'to_entries | map_values(.value)' -c --unbuffered")
 ```
 
 [0]: https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
