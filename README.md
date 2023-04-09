@@ -22,7 +22,7 @@ an example, not a turn-key solution.
 
 ## Module
 
-```
+```lisp
 (deflisten tray "./scripts/host.py")
 ```
 
