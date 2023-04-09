@@ -1,12 +1,17 @@
+#!/bin/env python3
+
 import os
 import sys
+import json
+# import errno
 
 import gi
 
 gi.require_version('Gtk', '3.0')
 
-from gi.repository import Gio  # noqa
-from gi.repository import GLib  # noqa
+from gi.repository import Gio  
+from gi.repository import Gtk  
+from gi.repository import GLib 
 
 MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.py')
 
@@ -26,32 +31,40 @@ NODE_INFO = Gio.DBusNodeInfo.new_for_xml("""
 
 items = {}
 
+def geticon(name):
+    icon_theme = Gtk.IconTheme.get_default()
+    icon = icon_theme.lookup_icon_for_scale(name, 64, 1, Gtk.IconLookupFlags.FORCE_SVG)
+    # path = Gtk.IconInfo.get_filename(icon)
+    return icon.get_filename()
 
 def render():
     # customize this function to your needs
     # see https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/StatusNotifierItem/
     # for available fields
-    labels = []
-    for key, item in reversed(items.items()):
-        name, path = key.split('/', 1)
 
-        if item['Status'] == 'Passive':
-            continue
+    try:
+        for key, item in reversed(items.items()):
+            address, path = key.split('/', 1)
 
-        label = f'[{item["IconName"]}]'
+            if os.path.isfile(item['IconName']):
+                item['IconPath'] = item['IconName']
+            else:
+                item['IconPath'] = geticon(item['IconName'])
 
-        cmd = (
-            f'busctl --user call \\{name} /{path} '
-            'org.kde.StatusNotifierItem Activate ii 0 0'
-        )
-        menu_cmd = f'python3 {MENU_PATH} \\{name} {item["Menu"]}'
+            item['address'] = address
+            item['path'] = f'/{path}'
+            item['cmd'] = f'busctl --user call {address} /{path} org.kde.StatusNotifierItem Activate ii 0 0'
+            item['menu_cmd'] = f'python3 {MENU_PATH} {address} {item["Menu"]}'
 
-        label = f'%{{A1:{cmd}:}}{label}%{{A}}'
-        label = f'%{{A3:{menu_cmd}:}}{label}%{{A}}'
+            # print(key)
+            # print(item)
 
-        labels.append(label)
-
-    print(' '.join(labels), flush=True)
+        print(json.dumps(items))
+        sys.stdout.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        sys.exit(1)  # Python exits with error code 1 on EPIPE
 
 
 def get_item_data(conn, sender, path):
