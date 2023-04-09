@@ -24,10 +24,12 @@ an example, not a turn-key solution.
 
 ```lisp
 (deflisten tray "./scripts/host.py")
-    (for entry in tray
-      (button :onclick {entry.menu_cmd}
-              :onrightclick {entry.cmd}
-        (image :image-height 20 :path {entry.IconPath})))
+
+(box :orientation "h" :space-evenly true
+      (for entry in tray
+        (button :onclick {entry.menu_cmd + "& disown"}
+                :onrightclick {entry.cmd + "& disown"}
+          (image :image-height 20 :path {entry.IconPath}))))
 ```
 
 [0]: https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
