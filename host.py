@@ -47,8 +47,9 @@ def render():
     # for available fields
 
     try:
+        labels = []
         for key, item in reversed(items.items()):
-            address, path = key.split('/', 1)
+            address, object = key.split('/', 1)
 
             if os.path.isfile(item['IconName']):
                 item['IconPath'] = item['IconName']
@@ -56,14 +57,17 @@ def render():
                 item['IconPath'] = geticon(item['IconName'])
 
             item['address'] = address
-            item['path'] = f'/{path}'
-            item['cmd'] = f'busctl --user call {address} /{path} org.kde.StatusNotifierItem Activate ii 0 0'
+            item['path'] = f'/{object}'
+            item['cmd'] = f'busctl --user call {address} /{object} org.kde.StatusNotifierItem Activate ii 0 0'
             item['menu_cmd'] = f'python3 {MENU_PATH} {address} {item["Menu"]}'
+
+            labels.append(item)
 
             # print(key)
             # print(item)
 
-        print(json.dumps(items))
+        # print(json.dumps(items))
+        print(json.dumps(labels))
         sys.stdout.flush()
     except BrokenPipeError:
         devnull = os.open(os.devnull, os.O_WRONLY)
@@ -179,6 +183,7 @@ if __name__ == '__main__':
 
     try:
         loop = GLib.MainLoop()
+        print(json.dumps([]))
         loop.run()
     finally:
         Gio.bus_unown_name(owner_id)
