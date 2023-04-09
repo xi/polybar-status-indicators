@@ -4,7 +4,7 @@ successor of appindicators and systray) for polybar.
 This allows you to use many existing status indicators, e.g. for NetworkManager
 or Steam. Menus are supported via rofi.
 
-![icons](screenshots/icons.png)
+![icons](screenshots/icon.png)
 ![rofi showing a NetworkManager menu](screenshots/menu.png)
 
 ## Dependencies
