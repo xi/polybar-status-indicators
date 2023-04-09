@@ -33,10 +33,10 @@ items = {}
 
 def geticon(name):
     icon_theme = Gtk.IconTheme.get_default()
-    icon = icon_theme.lookup_icon_for_scale(name, 64, 1, Gtk.IconLookupFlags.FORCE_SVG)
+    icon = icon_theme.lookup_icon(name, 22, Gtk.IconLookupFlags.FORCE_SVG)
     
     if icon == None:
-        icon = icon_theme.lookup_icon_for_scale("computer", 64, 1, Gtk.IconLookupFlags.FORCE_SVG)
+        icon = icon_theme.lookup_icon("computer", 22, Gtk.IconLookupFlags.FORCE_SVG)
 
     # path = Gtk.IconInfo.get_filename(icon)
     return icon.get_filename()
