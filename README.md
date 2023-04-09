@@ -27,8 +27,8 @@ an example, not a turn-key solution.
 
 (box :orientation "h" :space-evenly true
       (for entry in tray
-        (button :onclick {entry.menu_cmd + "& disown"}
-                :onrightclick {entry.cmd + "& disown"}
+        (button :onclick {entry.menu_cmd + "&"}
+                :onrightclick {entry.cmd + "&"}
           (image :image-height 20 :path {entry.IconPath}))))
 ```
 
