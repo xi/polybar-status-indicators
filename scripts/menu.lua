@@ -1,6 +1,6 @@
 #!/bin/env lua
 
--- local cjson = require('cjson')
+local cjson = require('cjson')
 -- local inspect = require('pl.import_into')().pretty.write
 local lgi = require('lgi')
 local Gio = lgi.require("Gio")
@@ -38,29 +38,54 @@ local Bus = setmetatable({}, {
     end
 })
 
-local format = function(menu)
-    local csv = ""
-    for _, j in pairs(menu) do
-        if j["cmd"] ~= nil then
-            csv = csv .. (j["label"] .. "," .. j["cmd"]) .. '\n'
+local function makemenu(item, menu, tag)
+    local entry = ""
+    for _, k in ipairs(item) do
+        if k[2]["children-display"] ~= "submenu" then
+            if k[2].type == "separator" then
+                entry = entry .. "^sep()" .. "\n"
+                --
+            elseif k[2].enabled ~= nil and not k[2].enabled and
+                string.len(k[2].label) > 0 then
+                entry = entry .. "^sep(" .. k[2].label .. ")\n"
+                --
+            elseif string.len(k[2].label) > 0 then
+                entry = entry .. k[2].label .. "," .. tostring(k[1]) .. "\n"
+                --
+            end
         else
-            csv = csv .. (j["label"]) .. '\n'
+            entry = entry .. k[2].label .. ",^checkout(" .. k[2].label .. ")\n"
+            menu = makemenu(k[3], menu, k[2].label)
         end
+    end
+
+    menu[tag] = entry
+    return menu
+end
+
+local format = function(menu)
+    local csv = menu[""]
+
+    for i, j in pairs(menu) do
+        if i ~= "" then csv = csv .. "\n^tag(" .. i .. ")\n" .. j end
     end
     return csv
 end
 
 local jgmenu = function(csv)
-    local cmd =
-        ("printf '%s' '$foo' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'"):gsub(
-            '$foo', csv)
+    local cmd = ("printf '%s' '" .. csv ..
+                    "' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'")
+    -- ("printf '%s' 'foo' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'"):gsub(
+    --     'foo', csv)
+
     local f = assert(io.popen(cmd, 'r'))
     local id = assert(f:read('*a'))
+
     f:close()
 
-    id = string.gsub(id, '^%s+', '')
-    id = string.gsub(id, '%s+$', '')
-    id = string.gsub(id, '[\n\r]+', ' ')
+    -- id = string.gsub(id, '^%s+', '')
+    -- id = string.gsub(id, '%s+$', '')
+    -- id = string.gsub(id, '[\n\r]+', ' ')
 
     return id
 end
@@ -69,33 +94,14 @@ local show_menu = function(conn, name, path)
     local bus = Bus(conn, name, path)
     local item = strip(bus.get_menu_layout(0, -1, {}))
     local menu = {}
+    -- local menu.submenu = {}
 
     for i = 1, #item do
-        if type(item[i]) == "table" and item[2][2]["children-display"] ==
-            "submenu" then
-            for _, k in ipairs(item[2][3]) do
-                local entry = {}
-
-                if k[2]["children-display"] ~= "submenu" then
-                    if k[2].type == "separator" then
-                        entry = {label = "^sep()"}
-                        --
-                    elseif k[2].enabled ~= nil and not k[2].enabled and
-                        string.len(k[2].label) > 0 then
-                        entry = {label = "^sep(" .. k[2].label .. ")"}
-                        --
-                    elseif string.len(k[2].label) > 0 then
-                        entry = {cmd = tostring(k[1]), label = k[2].label}
-                        --
-                    end
-                else
-                    entry = {label = "^tag(" .. k[2].label .. ")"}
-                end
-
-                table.insert(menu, entry)
-            end
-        end
+        if type(item[i]) == "table" and item[i][2]["children-display"] ==
+            "submenu" then menu = makemenu(item[i][3], menu, "") end
     end
+    -- print(cjson.encode(menu))
+    -- print(menu[""])
 
     local csv = format(menu)
     print(csv)
@@ -106,7 +112,6 @@ local show_menu = function(conn, name, path)
         print("id: " .. id)
         bus.menu_event(id, 'clicked', GLib.Variant('s', ''), os.time())
     end
-    --
 end
 
 local conn = Gio.bus_get_sync(Gio.BusType.SESSION)
