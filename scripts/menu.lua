@@ -1,6 +1,6 @@
 #!/bin/env lua
 
-local cjson = require('cjson')
+-- local cjson = require('cjson')
 -- local inspect = require('pl.import_into')().pretty.write
 local lgi = require('lgi')
 local Gio = lgi.require("Gio")
