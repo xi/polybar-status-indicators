@@ -6,7 +6,7 @@ local lgi = require('lgi')
 local Gio = lgi.require("Gio")
 -- local Gtk = lgi.require("Gtk")
 local GLib = lgi.require("GLib")
-local strip = require("dbus_proxy").variant.strip
+-- local strip = require("dbus_proxy").variant.strip
 
 local Bus = setmetatable({}, {
     __call = function(self, conn, name, path)
@@ -18,20 +18,20 @@ local Bus = setmetatable({}, {
                                   return_type)
             -- return ("oi")
             return self.conn:call_sync(self.name, self.path, interface, method,
-                                       GLib.Variant(params_type, params),
-                                       GLib.VariantType(return_type),
-                                       Gio.DBusCallFlags.NONE, -1, nil)
+                GLib.Variant(params_type, params),
+                GLib.VariantType(return_type),
+                Gio.DBusCallFlags.NONE, -1, nil)
         end
 
         self.get_menu_layout = function(...)
-            return self.call_sync('com.canonical.dbusmenu', 'GetLayout', {...},
-                                  '(iias)', '(u(ia{sv}av))')
+            return self.call_sync('com.canonical.dbusmenu', 'GetLayout', { ... },
+                '(iias)', '(u(ia{sv}av))')
             --
         end
 
         self.menu_event = function(...)
-            self.call_sync('com.canonical.dbusmenu', 'Event', {...}, '(isvu)',
-                           '()')
+            self.call_sync('com.canonical.dbusmenu', 'Event', { ... }, '(isvu)',
+                '()')
         end
 
         return self
@@ -74,7 +74,7 @@ end
 
 local jgmenu = function(csv)
     local cmd = ("printf '%s' '" .. csv ..
-                    "' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'")
+        "' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'")
     -- ("printf '%s' 'foo' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'"):gsub(
     --     'foo', csv)
 
@@ -92,13 +92,20 @@ end
 
 local show_menu = function(conn, name, path)
     local bus = Bus(conn, name, path)
-    local item = strip(bus.get_menu_layout(0, -1, {}))
+    -- local item = strip(bus.get_menu_layout(0, -1, {}))
+    local item = bus.get_menu_layout(0, -1, {})
     local menu = {}
+
+    -- print(#item)
+    -- print(item[1])
+    -- print(item[2])
     -- local menu.submenu = {}
 
     for i = 1, #item do
         if type(item[i]) == "table" and item[i][2]["children-display"] ==
-            "submenu" then menu = makemenu(item[i][3], menu, "") end
+            "submenu" then
+            menu = makemenu(item[i][3], menu, "")
+        end
     end
     -- print(cjson.encode(menu))
     -- print(menu[""])
