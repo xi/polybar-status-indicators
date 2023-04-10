@@ -13,7 +13,7 @@ from gi.repository import Gio
 from gi.repository import Gtk  
 from gi.repository import GLib 
 
-MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.py')
+MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.lua')
 
 NODE_INFO = Gio.DBusNodeInfo.new_for_xml("""
 <?xml version="1.0" encoding="UTF-8"?>
@@ -31,15 +31,26 @@ NODE_INFO = Gio.DBusNodeInfo.new_for_xml("""
 
 items = {}
 
-def geticon(name):
+def geticon(item):
     icon_theme = Gtk.IconTheme.get_default()
-    icon = icon_theme.lookup_icon(name, 22, 0)
+
+    icon = icon_theme.lookup_icon(item['IconName'].lower(), 22, 0)
     
-    if icon == None:
-        icon = icon_theme.lookup_icon("computer", 22, 0)
+    if icon != None:
+        return icon.get_filename()
+    else:
+        icon = icon_theme.lookup_icon(item['Title'].lower(), 22, 0)
+        if icon != None:
+            return icon.get_filename()
+        else:
+            icon = icon_theme.lookup_icon(item['Id'].lower(), 22, 0)
+            if icon != None:
+                return icon.get_filename()
+            else:
+                return icon_theme.lookup_icon("computer", 22, 0).get_filename()
 
     # path = Gtk.IconInfo.get_filename(icon)
-    return icon.get_filename()
+    # return icon.get_filename()
 
 def render():
     # customize this function to your needs
@@ -51,15 +62,24 @@ def render():
         for key, item in reversed(items.items()):
             address, object = key.split('/', 1)
 
+            # if 'ToolTip' in items[key]:
+            # #     item['ToolTip'].append(len(item['ToolTip']))
+            #     for j in item['ToolTip']:
+            #         if len(j) > 0:
+            #             item['ToolTip'] = j
+            # else:
+            #     item['ToolTip'] = item['Category']
+
             if os.path.isfile(item['IconName']):
                 item['IconPath'] = item['IconName']
             else:
-                item['IconPath'] = geticon(item['IconName'])
+                item['IconPath'] = geticon(item)
 
             item['address'] = address
             item['path'] = f'/{object}'
             item['cmd'] = f'busctl --user call {address} /{object} org.kde.StatusNotifierItem Activate ii 0 0'
-            item['menu_cmd'] = f'python3 {MENU_PATH} {address} {item["Menu"]}'
+            # item['menu_cmd'] = f"""{MENU_PATH} {address} {item["Menu"]} | jq '.[] | join(",")' -r"""
+            item['menu_cmd'] = f'{MENU_PATH} {address} {item["Menu"]}'
 
             labels.append(item)
 
