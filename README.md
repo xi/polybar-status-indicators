@@ -1,8 +1,8 @@
 An implementation of the freedesktop [StatusNotifierItem][0] specification (the
-successor of appindicators and systray) for polybar.
+successor of appindicators and systray) for [eww][1].
 
 This allows you to use many existing status indicators, e.g. for NetworkManager
-or Steam. Menus are supported via rofi.
+or Steam. Menus are supported via jgmenu.
 
 ![icons](screenshots/icon.png)
 ![jgmenu showing a polychromatic menu](screenshots/jgmenu.png)
@@ -35,3 +35,4 @@ an example, not a turn-key solution.
 ```
 
 [0]: https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
+[1]: https://github.com/elkowar/eww
