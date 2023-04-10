@@ -3,15 +3,16 @@
 import os
 import sys
 import json
-# import errno
 
 import gi
 
 gi.require_version('Gtk', '3.0')
 
-from gi.repository import Gio  
-from gi.repository import Gtk  
-from gi.repository import GLib 
+from gi.repository import Gio
+from gi.repository import Gtk
+from gi.repository import GLib
+# from gi.repository import GdkPixbuf
+# from pathlib import Path
 
 MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.lua')
 
@@ -34,23 +35,39 @@ items = {}
 def geticon(item):
     icon_theme = Gtk.IconTheme.get_default()
 
-    icon = icon_theme.lookup_icon(item['IconName'].lower(), 22, 0)
-    
+    icon = icon_theme.lookup_icon(item['Title'].lower(), 22, 0)
+
     if icon != None:
         return icon.get_filename()
     else:
-        icon = icon_theme.lookup_icon(item['Title'].lower(), 22, 0)
+        icon = icon_theme.lookup_icon(item['IconName'].lower(), 22, 0)
         if icon != None:
             return icon.get_filename()
         else:
             icon = icon_theme.lookup_icon(item['Id'].lower(), 22, 0)
             if icon != None:
                 return icon.get_filename()
+            # elif 'IconPixmap' in item and len(item['IconPixmap']) > 0:
+            #     data = item['IconPixmap'][0]
+            #
+            #     gbytes = GLib.Bytes.new(data[2])
+            #
+            #     # print('\n\n\n', file=sys.stderr)
+            #     # print(len(data[2]), file=sys.stderr)
+            #     # print('\n\n\n', file=sys.stderr)
+            #
+            #     iconpath = Path(os.getenv('XDG_DATA_HOME', ( os.getenv( 'HOME' ) + '/.local/share' ) ) + '/icons/hicolor/' + str(data[0]) + 'x' + str(data[1]) +'/apps/')
+            #     iconpath.mkdir(parents=True, exist_ok=True)
+            #
+            #     iconpath = ( iconpath.as_posix() + '/' + item['Id'] + '.png' )
+            #
+            #     icon = GdkPixbuf.Pixbuf.new_from_bytes(gbytes, GdkPixbuf.Colorspace.RGB, True, 8, data[0], data[1], 32)
+            #     icon.savev( iconpath , 'png' )
+            #
+            #     icon_theme = Gtk.IconTheme.get_default()
+            #     return icon_theme.lookup_icon(item['Id'], 22, 0).get_filename()
             else:
                 return icon_theme.lookup_icon("computer", 22, 0).get_filename()
-
-    # path = Gtk.IconInfo.get_filename(icon)
-    # return icon.get_filename()
 
 def render():
     # customize this function to your needs
@@ -62,7 +79,17 @@ def render():
         for key, item in reversed(items.items()):
             address, object = key.split('/', 1)
 
-            # if 'ToolTip' in items[key]:
+            if 'ToolTip' in item:
+                if type(item['ToolTip']) is tuple:
+                    item['ToolTip'] = item['ToolTip'][2]
+
+                elif not type(item['ToolTip']) is str:
+                    item['ToolTip'] = item['Title']
+            else:
+                item['ToolTip'] = item['Title']
+
+            # if str(type(item['ToolTip'])).split("'")[1] == 'tuple':
+            #     item['ToolTip'] = item['ToolTip'][2]
             # #     item['ToolTip'].append(len(item['ToolTip']))
             #     for j in item['ToolTip']:
             #         if len(j) > 0:
@@ -78,17 +105,14 @@ def render():
             item['address'] = address
             item['path'] = f'/{object}'
             item['cmd'] = f'busctl --user call {address} /{object} org.kde.StatusNotifierItem Activate ii 0 0'
-            # item['menu_cmd'] = f"""{MENU_PATH} {address} {item["Menu"]} | jq '.[] | join(",")' -r"""
             item['menu_cmd'] = f'{MENU_PATH} {address} {item["Menu"]}'
 
             labels.append(item)
 
-            # print(key)
-            # print(item)
 
-        # print(json.dumps(items))
         print(json.dumps(labels))
         sys.stdout.flush()
+
     except BrokenPipeError:
         devnull = os.open(os.devnull, os.O_WRONLY)
         os.dup2(devnull, sys.stdout.fileno())

@@ -1,12 +1,9 @@
 #!/bin/env lua
 
 -- local cjson = require('cjson')
--- local inspect = require('pl.import_into')().pretty.write
 local lgi = require('lgi')
 local Gio = lgi.require("Gio")
--- local Gtk = lgi.require("Gtk")
 local GLib = lgi.require("GLib")
--- local strip = require("dbus_proxy").variant.strip
 
 local Bus = setmetatable({}, {
     __call = function(self, conn, name, path)
@@ -40,22 +37,35 @@ local Bus = setmetatable({}, {
 
 local function makemenu(item, menu, tag)
     local entry = ""
-    for _, k in ipairs(item) do
-        if k[2]["children-display"] ~= "submenu" then
-            if k[2].type == "separator" then
-                entry = entry .. "^sep()" .. "\n"
+
+    if #item == 0 then
+        entry = "^sep()\n"
+    else
+        for _, k in ipairs(item) do
+            if k[2]["children-display"] ~= "submenu" then
                 --
-            elseif k[2].enabled ~= nil and not k[2].enabled and
-                string.len(k[2].label) > 0 then
-                entry = entry .. "^sep(" .. k[2].label .. ")\n"
-                --
-            elseif string.len(k[2].label) > 0 then
-                entry = entry .. k[2].label .. "," .. tostring(k[1]) .. "\n"
-                --
+                if k[2].type == "separator" then
+                    --
+                    entry = entry .. "^sep()\n"
+                    --
+                elseif k[2].enabled ~= nil and not k[2].enabled and
+                    string.len(k[2].label) > 0 then
+                    --
+                    entry = entry .. "^sep(" .. k[2].label .. ")\n"
+                    --
+                elseif string.len(k[2].label) > 0 then
+                    --
+                    entry = entry .. k[2].label .. "," .. tostring(k[1]) .. "\n"
+                    --
+                end
+            else
+                local temp = k[2].label
+
+                while menu[temp] ~= nil do temp = temp .. "x" end
+
+                entry = entry .. k[2].label .. ",^checkout(" .. temp .. ")\n"
+                menu = makemenu(k[3], menu, temp)
             end
-        else
-            entry = entry .. k[2].label .. ",^checkout(" .. k[2].label .. ")\n"
-            menu = makemenu(k[3], menu, k[2].label)
         end
     end
 
@@ -75,31 +85,23 @@ end
 local jgmenu = function(csv)
     local cmd = ("printf '%s' '" .. csv ..
         "' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'")
-    -- ("printf '%s' 'foo' | jgmenu --simple --no-spawn --config-file='./scripts/jgmenurc'"):gsub(
-    --     'foo', csv)
 
     local f = assert(io.popen(cmd, 'r'))
     local id = assert(f:read('*a'))
 
     f:close()
 
-    -- id = string.gsub(id, '^%s+', '')
-    -- id = string.gsub(id, '%s+$', '')
-    -- id = string.gsub(id, '[\n\r]+', ' ')
+    id = string.gsub(id, '^%s+', '')
+    id = string.gsub(id, '%s+$', '')
+    id = string.gsub(id, '[\n\r]+', ' ')
 
     return id
 end
 
 local show_menu = function(conn, name, path)
     local bus = Bus(conn, name, path)
-    -- local item = strip(bus.get_menu_layout(0, -1, {}))
     local item = bus.get_menu_layout(0, -1, {})
     local menu = {}
-
-    -- print(#item)
-    -- print(item[1])
-    -- print(item[2])
-    -- local menu.submenu = {}
 
     for i = 1, #item do
         if type(item[i]) == "table" and item[i][2]["children-display"] ==
@@ -107,8 +109,8 @@ local show_menu = function(conn, name, path)
             menu = makemenu(item[i][3], menu, "")
         end
     end
+
     -- print(cjson.encode(menu))
-    -- print(menu[""])
 
     local csv = format(menu)
     print(csv)
