@@ -5,17 +5,17 @@ This allows you to use many existing status indicators, e.g. for NetworkManager
 or Steam. Menus are supported via rofi.
 
 ![icons](screenshots/icon.png)
-![rofi showing a NetworkManager menu](screenshots/menu.png)
+![jgmenu showing a polychromatic menu](screenshots/jgmenu.png)
 
 ## Dependencies
 
 -   python3-gi
--   rofi (or a similar dmenu-like tool)
+-   lua-lgi
+-   jgmenu
 
 ## Configuration
 
 -   In host.py, adapt `render()` to use your icons and colors
--   In menu.py, adapt `DMENU_CMD` to your preferred dmenu-like tool
 
 Apart from that, feel free to change whatever you like. This repo is meant as
 an example, not a turn-key solution.
