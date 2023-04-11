@@ -3,6 +3,8 @@
 import subprocess
 import sys
 import time
+import os
+import json
 
 import gi
 
@@ -11,8 +13,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gio  # noqa
 from gi.repository import GLib  # noqa
 
-DMENU_CMD = ['rofi', '-dmenu', '-i', '-no-sort']
-
+JGMENU_CONFIG = os.path.join(os.path.dirname(__file__), 'jgmenurc')
+JGMENU_CMD = ['jgmenu', '--simple', '--no-spawn', "--config-file='", JGMENU_CONFIG, "'"]
 
 class Bus:
     def __init__(self, conn, name, path):
@@ -46,9 +48,51 @@ class Bus:
         self.call_sync('com.canonical.dbusmenu', 'Event', args, '(isvu)', '()')
 
 
-def dmenu(_input):
+
+def makemenu(item,menu,tag):
+    entry = ""
+
+    if len(item) == 0:
+        entry = "^sep()\n"
+    else:
+        for i in item:
+            if 'children-display' in i[1] and i[1]['children-display'] == 'submenu':
+                temp = i[1]['label']
+
+                while temp in menu:
+                    temp = temp + "x"
+
+                entry = entry + i[1]['label'] + ',^checkout(' + temp + ")\n"
+                makemenu(i[2], menu, temp)
+                
+            else:
+                if 'type' in i[1] and i[1]['type'] == "separator":
+                    entry = entry + '^sep()\n'
+
+                elif ('enabled' in i[1] and
+                        not i[1]['enabled'] and
+                        'label' in i[1] and len(i[1]['label']) > 0):
+
+                    entry = entry + '^sep(' + i[1]['label'] + ')\n'
+
+                elif 'label' in i[1] and len(i[1]['label']) > 0:
+                    entry = entry + i[1]['label'] + ',' + str(i[0]) + '\n'
+
+    menu[tag] = entry
+    return menu
+
+def formatmenu(menu):
+    csv = menu[""]
+
+    for i in menu:
+        if i != "":
+            csv = csv + '\n^tag(' + i + ')\n' + menu[i]
+
+    return csv
+
+def jgmenu(_input):
     p = subprocess.Popen(
-        DMENU_CMD,
+        JGMENU_CMD,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         encoding='utf-8',
@@ -56,55 +100,25 @@ def dmenu(_input):
     out, _ = p.communicate(_input)
     return out
 
-
-def format_toggle_value(props):
-    toggle_type = props.get('toggle-type', '')
-    toggle_value = props.get('toggle-state', -1)
-
-    if toggle_value == 0:
-        s = ' '
-    elif toggle_value == 1:
-        s = 'X'
-    else:
-        s = '~'
-
-    if toggle_type == 'checkmark':
-        return f'[{s}] '
-    elif toggle_type == 'radio':
-        return f'({s}) '
-    else:
-        return ''
-
-
-def format_menu_item(item, level=1):
-    id, props, children = item
-
-    if not props.get('visible', True):
-        return ''
-    if props.get('type', 'standard') == 'separator':
-        label = '---'
-    else:
-        label = format_toggle_value(props) + props.get('label', '')
-        if not props.get('enabled', True):
-            label = f'({label})'
-
-    indentation = '  ' * level
-    ret = f'{id}{indentation}{label}\n'
-    for child in children:
-        ret += format_menu_item(child, level + 1)
-    return ret
-
-
 def show_menu(conn, name, path):
     bus = Bus(conn, name, path)
-    item = bus.get_menu_layout(0, -1, [])[1]
+    item = bus.get_menu_layout(0, -1, [])
+    menu = {}
 
-    menu = format_menu_item(item)
-    selected = dmenu(menu)
+    for i in item:
+        if type(i) == tuple and i[1]['children-display'] == 'submenu':
+            makemenu(i[2], menu, "")
 
-    if selected:
-        id = int(selected.split()[0])
-        bus.menu_event(id, 'clicked', GLib.Variant('s', ''), time.time())
+    csv = formatmenu(menu)
+
+    print(csv)
+
+    id = jgmenu(csv)
+
+    if id:
+        print("id: " + id)
+        bus.menu_event(int(id), 'clicked', GLib.Variant('s', ''), time.time())
+
 
 
 if __name__ == '__main__':
