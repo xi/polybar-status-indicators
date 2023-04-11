@@ -10,7 +10,6 @@ or Steam. Menus are supported via jgmenu.
 ## Dependencies
 
 -   python3-gi
--   lua-lgi
 -   jgmenu
 
 ## Configuration
