@@ -13,7 +13,8 @@ from gi.repository import Gio  # noqa
 from gi.repository import GLib  # noqa
 
 JGMENU_CONFIG = os.path.join(os.path.dirname(__file__), 'jgmenurc')
-JGMENU_CMD = ['jgmenu', '--simple', '--no-spawn', "--config-file='", JGMENU_CONFIG, "'"]
+# JGMENU_CMD = ['jgmenu', '--simple', '--no-spawn', f"--config-file='{JGMENU_CONFIG}'"]
+JGMENU_CMD = ['jgmenu', '--simple', '--no-spawn', "--config-file='./scripts/jgmenurc'"]
 
 class Bus:
     def __init__(self, conn, name, path):
@@ -61,21 +62,21 @@ def makemenu(item,menu,tag):
                 while temp in menu:
                     temp = temp + "x"
 
-                entry = entry + i[1]['label'] + ',^checkout(' + temp + ")\n"
+                entry = f'{entry}{i[1]["label"]},^checkout({temp})\n'
                 makemenu(i[2], menu, temp)
                 
             else:
                 if 'type' in i[1] and i[1]['type'] == "separator":
-                    entry = entry + '^sep()\n'
+                    entry = f'{entry}^sep()\n'
 
                 elif ('enabled' in i[1] and
                         not i[1]['enabled'] and
                         'label' in i[1] and len(i[1]['label']) > 0):
 
-                    entry = entry + '^sep(' + i[1]['label'] + ')\n'
+                    entry = f"{entry}^sep({i[1]['label']})\n"
 
                 elif 'label' in i[1] and len(i[1]['label']) > 0:
-                    entry = entry + i[1]['label'] + ',' + str(i[0]) + '\n'
+                    entry = f"{entry}{i[1]['label']},{str(i[0])}\n"
 
     menu[tag] = entry
     return menu
@@ -85,7 +86,7 @@ def formatmenu(menu):
 
     for i in menu:
         if i != "":
-            csv = csv + '\n^tag(' + i + ')\n' + menu[i]
+            csv = f'{csv}\n^tag({i})\n{menu[i]}'
 
     return csv
 

@@ -11,10 +11,10 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
-# from gi.repository import GdkPixbuf
-# from pathlib import Path
+from gi.repository import GdkPixbuf
+from pathlib import Path
 
-MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.lua')
+MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.py')
 
 NODE_INFO = Gio.DBusNodeInfo.new_for_xml("""
 <?xml version="1.0" encoding="UTF-8"?>
@@ -47,25 +47,27 @@ def geticon(item):
             icon = icon_theme.lookup_icon(item['Id'].lower(), 22, 0)
             if icon != None:
                 return icon.get_filename()
-            # elif 'IconPixmap' in item and len(item['IconPixmap']) > 0:
-            #     data = item['IconPixmap'][0]
-            #
-            #     gbytes = GLib.Bytes.new(data[2])
-            #
-            #     # print('\n\n\n', file=sys.stderr)
-            #     # print(len(data[2]), file=sys.stderr)
-            #     # print('\n\n\n', file=sys.stderr)
-            #
-            #     iconpath = Path(os.getenv('XDG_DATA_HOME', ( os.getenv( 'HOME' ) + '/.local/share' ) ) + '/icons/hicolor/' + str(data[0]) + 'x' + str(data[1]) +'/apps/')
-            #     iconpath.mkdir(parents=True, exist_ok=True)
-            #
-            #     iconpath = ( iconpath.as_posix() + '/' + item['Id'] + '.png' )
-            #
-            #     icon = GdkPixbuf.Pixbuf.new_from_bytes(gbytes, GdkPixbuf.Colorspace.RGB, True, 8, data[0], data[1], 32)
-            #     icon.savev( iconpath , 'png' )
-            #
-            #     icon_theme = Gtk.IconTheme.get_default()
-            #     return icon_theme.lookup_icon(item['Id'], 22, 0).get_filename()
+
+            elif 'IconPixmap' in item and len(item['IconPixmap']) > 0:
+                data = item['IconPixmap'][-1]
+
+                gbytes = GLib.Bytes.new(data[2])
+
+                # print('\n\n\n', file=sys.stderr)
+                # print(len(data[2]), file=sys.stderr)
+                # print('\n\n\n', file=sys.stderr)
+
+                iconpath = Path(os.getenv('XDG_DATA_HOME', ( os.getenv( 'HOME' ) + '/.local/share' ) ) + '/icons/hicolor/' + str(data[0]) + 'x' + str(data[1]) +'/apps/')
+                iconpath.mkdir(parents=True, exist_ok=True)
+
+                iconpath = ( iconpath.as_posix() + '/' + item['Id'] + '.png' )
+
+                icon = GdkPixbuf.Pixbuf.new_from_bytes(gbytes, GdkPixbuf.Colorspace.RGB, True, 8, data[0], data[1], (4 * data [0]) )
+                icon.savev( iconpath , 'png' )
+
+                icon_theme = Gtk.IconTheme.get_default()
+                return icon_theme.lookup_icon(item['Id'], 22, 0).get_filename()
+
             else:
                 return icon_theme.lookup_icon("computer", 22, 0).get_filename()
 
