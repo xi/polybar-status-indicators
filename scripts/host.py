@@ -14,7 +14,7 @@ from gi.repository import GLib
 from gi.repository import GdkPixbuf
 from pathlib import Path
 
-MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.py')
+MENU_PATH = os.path.join(os.path.dirname(__file__), 'menu.lua')
 
 NODE_INFO = Gio.DBusNodeInfo.new_for_xml("""
 <?xml version="1.0" encoding="UTF-8"?>
@@ -51,11 +51,20 @@ def geticon(item):
             elif 'IconPixmap' in item and len(item['IconPixmap']) > 0:
                 data = item['IconPixmap'][-1]
 
-                gbytes = GLib.Bytes.new(data[2])
+                alpha = data[2][0::4]
+                red = data[2][1::4]
+                green = data[2][2::4]
+                blue = data[2][3::4]
 
-                # print('\n\n\n', file=sys.stderr)
-                # print(len(data[2]), file=sys.stderr)
-                # print('\n\n\n', file=sys.stderr)
+                newdata = []
+
+                for i in range(len(alpha)):
+                    newdata.append(red[i])
+                    newdata.append(green[i])
+                    newdata.append(blue[i])
+                    newdata.append(alpha[i])
+
+                gbytes = GLib.Bytes.new(newdata)
 
                 iconpath = Path(os.getenv('XDG_DATA_HOME', ( os.getenv( 'HOME' ) + '/.local/share' ) ) + '/icons/hicolor/' + str(data[0]) + 'x' + str(data[1]) +'/apps/')
                 iconpath.mkdir(parents=True, exist_ok=True)
@@ -89,15 +98,6 @@ def render():
                     item['ToolTip'] = item['Title']
             else:
                 item['ToolTip'] = item['Title']
-
-            # if str(type(item['ToolTip'])).split("'")[1] == 'tuple':
-            #     item['ToolTip'] = item['ToolTip'][2]
-            # #     item['ToolTip'].append(len(item['ToolTip']))
-            #     for j in item['ToolTip']:
-            #         if len(j) > 0:
-            #             item['ToolTip'] = j
-            # else:
-            #     item['ToolTip'] = item['Category']
 
             if os.path.isfile(item['IconName']):
                 item['IconPath'] = item['IconName']
